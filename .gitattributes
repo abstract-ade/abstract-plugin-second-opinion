@@ -1,0 +1,5 @@
+# Only the plugin is installed: `git archive` (what Abstract fetches) leaves these out.
+.gitattributes export-ignore
+.github export-ignore
+README.md export-ignore
+Tests export-ignore

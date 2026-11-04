@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the package
+        run: python3 .github/check-package.py
+
+  tests:
+    # The plugin's tests run inside Abstract's own test target, against the
+    # host as it is on Abstract's main branch.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: plugin
+      - uses: actions/checkout@v4
+        with:
+          repository: endeken-com/abstract
+          path: abstract
+      - name: Put the plugin and its tests in Abstract
+        run: |
+          package=abstract/Abstract/Resources/Plugins/second-opinion.abstractplugin
+          rm -rf "$package" && mkdir -p "$package"
+          git -C plugin archive HEAD | tar -x -C "$package"
+          cp plugin/Tests/*.swift abstract/Packages/AbstractCore/Tests/AbstractCoreTests/
+          if [ -d plugin/Tests/Fixtures ]; then
+            cp -R plugin/Tests/Fixtures/. abstract/Packages/AbstractCore/Tests/AbstractCoreTests/Fixtures/
+          fi
+      - name: Run the plugin's tests
+        working-directory: abstract/Packages/AbstractCore
+        run: swift test --filter SecondOpinionPluginTests
